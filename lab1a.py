@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO
 
 # ---------------- CONFIG ----------------
 THINGSPEAK_API_KEY = "M6LCG3VQELFY9JG4"  # Replace with your API key
-FIELD_NUMBER = 1  # Change 1, 2, 3, or 4 for each Pi
+FIELD_NUMBER = 2  # Change 1, 2, 3, or 4 for each Pi
 LOCATION_NAME = {
     1: "Entrance",
     2: "Corridor",
