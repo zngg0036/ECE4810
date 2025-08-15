@@ -9,7 +9,7 @@ FIELD_NUMBER = 2  # Change 1, 2, 3, or 4 for each Pi
 LOCATION_NAME = {
     1: "Entrance",
     2: "Corridor",
-    3: "Room A",
+    3: "Workbench A",
     4: "Exit"
 }[FIELD_NUMBER]
 
