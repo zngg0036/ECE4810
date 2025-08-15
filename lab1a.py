@@ -2,12 +2,10 @@ import requests
 import time
 import datetime
 import RPi.GPIO as GPIO
-import json
 
 # ---------------- CONFIG ----------------
-THINGSPEAK_API_KEY = "M6LCG3VQELFY9JG4"  # ThingSpeak Write API Key
-FIELD_NUMBER = 2  # Change this per Raspberry Pi (1-4)
-
+THINGSPEAK_API_KEY = "M6LCG3VQELFY9JG4"  # Replace with your API key
+FIELD_NUMBER = 2  # Change 1, 2, 3, or 4 for each Pi
 LOCATION_NAME = {
     1: "Entrance",
     2: "Corridor",
@@ -21,32 +19,19 @@ TELEGRAM_CHAT_ID = "1443462038"
 TRIGGER_PIN = 7
 ECHO_PIN = 11
 THRESHOLD_DISTANCE = 20  # cm
-READ_INTERVAL = 15       # seconds between sensor readings
-SEND_INTERVAL = 15       # seconds between ThingSpeak bulk sends
-ALERT_INTERVAL = 10      # seconds before re-sending an alert
+READ_INTERVAL = 1  # seconds between ThingSpeak updates
+ALERT_INTERVAL = 10  # seconds before re-sending an alert
 # ----------------------------------------
 
 last_alert_time = 0
-data_buffer = []  # Store readings before bulk send
 
-def send_bulk_to_thingspeak():
-    """Send buffered distance readings to ThingSpeak in bulk JSON."""
-    global data_buffer
-    if not data_buffer:
-        return
-
-    url = "https://api.thingspeak.com/channels/update.json"  # No channel_id needed
+def send_to_thingspeak(distance):
+    """Send distance reading to ThingSpeak."""
+    url = f"https://api.thingspeak.com/update"
+    params = {"api_key": THINGSPEAK_API_KEY, f"field{FIELD_NUMBER}": distance}
     try:
-        for entry in data_buffer:
-            payload = {
-                "api_key": THINGSPEAK_API_KEY,
-                f"field{FIELD_NUMBER}": entry[f"field{FIELD_NUMBER}"]
-            }
-            response = requests.post(url, data=payload, timeout=5)
-            print(f"[ThingSpeak] Response: {response.text}")
-            if response.status_code != 200:
-                print(f"[ThingSpeak] Error sending data: {response.status_code}")
-        data_buffer.clear()  # Clear buffer only if successful
+        response = requests.get(url, params=params, timeout=5)
+        print(f"[ThingSpeak] Response: {response.text}")
     except Exception as e:
         print(f"[ThingSpeak] Error: {e}")
 
@@ -87,8 +72,6 @@ try:
     print(f"Starting sensor at {LOCATION_NAME} (Field {FIELD_NUMBER})")
     time.sleep(2)  # allow sensor to settle
 
-    last_send_time = time.time()
-
     while True:
         distance = measure_distance()
         
@@ -97,31 +80,20 @@ try:
             print(f"[{LOCATION_NAME}] Outlier detected: {distance} cm")
         else:
             print(f"[{LOCATION_NAME}] Distance: {distance} cm")
-            timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-
-            # Buffer reading
-            data_buffer.append({
-                "created_at": timestamp,
-                f"field{FIELD_NUMBER}": distance
-            })
-
+            send_to_thingspeak(distance)
+    
             # Send alert if person detected
             if 0 < distance < THRESHOLD_DISTANCE:
                 now = time.time()
                 if now - last_alert_time > ALERT_INTERVAL:
-                    local_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     message = (f"🚨 Motion Detected!\n"
                                f"📍 Location: {LOCATION_NAME}\n"
                                f"📏 Distance: {distance} cm\n"
-                               f"🕒 Time: {local_time}")
+                               f"🕒 Time: {timestamp}")
                     send_to_telegram(message)
                     last_alert_time = now
-
-        # Bulk send every SEND_INTERVAL seconds
-        if time.time() - last_send_time >= SEND_INTERVAL:
-            send_bulk_to_thingspeak()
-            last_send_time = time.time()
-
+    
         time.sleep(READ_INTERVAL)
 
 except KeyboardInterrupt:
