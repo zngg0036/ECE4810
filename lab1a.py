@@ -88,3 +88,43 @@ try:
     time.sleep(2)  # allow sensor to settle
 
     last_send_time = time.time()
+
+    while True:
+        distance = measure_distance()
+        
+        # Outlier check
+        if distance > 150:
+            print(f"[{LOCATION_NAME}] Outlier detected: {distance} cm")
+        else:
+            print(f"[{LOCATION_NAME}] Distance: {distance} cm")
+            timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            # Buffer reading
+            data_buffer.append({
+                "created_at": timestamp,
+                f"field{FIELD_NUMBER}": distance
+            })
+
+            # Send alert if person detected
+            if 0 < distance < THRESHOLD_DISTANCE:
+                now = time.time()
+                if now - last_alert_time > ALERT_INTERVAL:
+                    local_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    message = (f"🚨 Motion Detected!\n"
+                               f"📍 Location: {LOCATION_NAME}\n"
+                               f"📏 Distance: {distance} cm\n"
+                               f"🕒 Time: {local_time}")
+                    send_to_telegram(message)
+                    last_alert_time = now
+
+        # Bulk send every SEND_INTERVAL seconds
+        if time.time() - last_send_time >= SEND_INTERVAL:
+            send_bulk_to_thingspeak()
+            last_send_time = time.time()
+
+        time.sleep(READ_INTERVAL)
+
+except KeyboardInterrupt:
+    print("Exiting program...")
+finally:
+    GPIO.cleanup()
