@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO
 import json
 
 # ---------------- CONFIG ----------------
-MASTER_SERVER = "http://192.168.0.100:5000/update"  # Change to Master Pi IP
+MASTER_SERVER = "http://192.168.137.119:5000/update"  # Change to Master Pi IP
 FIELD_NUMBER = 2  # Change 1–4 for each Pi
 LOCATION_NAME = {
     1: "Entrance",
