@@ -64,5 +64,9 @@ def send_to_telegram(message):
         print("[Telegram] Error:", e)
 
 if __name__ == "__main__":
+    import socket
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    print(f"🌐 Master Pi running on: http://{local_ip}:5000")
     threading.Thread(target=send_to_thingspeak, daemon=True).start()
     app.run(host="0.0.0.0", port=5000)
