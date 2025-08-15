@@ -9,7 +9,7 @@ FIELD_NUMBER = 2  # Change 1, 2, 3, or 4 for each Pi
 LOCATION_NAME = {
     1: "Entrance",
     2: "Corridor",
-    3: "Room A",
+    3: "Workbench A",
     4: "Exit"
 }[FIELD_NUMBER]
 
@@ -18,9 +18,9 @@ TELEGRAM_CHAT_ID = "1443462038"
 
 TRIGGER_PIN = 7
 ECHO_PIN = 11
-THRESHOLD_DISTANCE = 50  # cm
-READ_INTERVAL = 15  # seconds between ThingSpeak updates
-ALERT_INTERVAL = 30  # seconds before re-sending an alert
+THRESHOLD_DISTANCE = 20  # cm
+READ_INTERVAL = 1  # seconds between ThingSpeak updates
+ALERT_INTERVAL = 10  # seconds before re-sending an alert
 # ----------------------------------------
 
 last_alert_time = 0
@@ -74,20 +74,26 @@ try:
 
     while True:
         distance = measure_distance()
-        print(f"[{LOCATION_NAME}] Distance: {distance} cm")
-        send_to_thingspeak(distance)
-        # Send alert if person detected
-        if 0 < distance < THRESHOLD_DISTANCE:
-            now = time.time()
-            if now - last_alert_time > ALERT_INTERVAL:
-                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                message = (f"🚨 Motion Detected!\n"
-                           f"📍 Location: {LOCATION_NAME}\n"
-                           f"📏 Distance: {distance} cm\n"
-                           f"🕒 Time: {timestamp}")
-                send_to_telegram(message)
-                last_alert_time = now
-
+        
+        # Outlier check
+        if distance > 150:
+            print(f"[{LOCATION_NAME}] Outlier detected: {distance} cm")
+        else:
+            print(f"[{LOCATION_NAME}] Distance: {distance} cm")
+            send_to_thingspeak(distance)
+    
+            # Send alert if person detected
+            if 0 < distance < THRESHOLD_DISTANCE:
+                now = time.time()
+                if now - last_alert_time > ALERT_INTERVAL:
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    message = (f"🚨 Motion Detected!\n"
+                               f"📍 Location: {LOCATION_NAME}\n"
+                               f"📏 Distance: {distance} cm\n"
+                               f"🕒 Time: {timestamp}")
+                    send_to_telegram(message)
+                    last_alert_time = now
+    
         time.sleep(READ_INTERVAL)
 
 except KeyboardInterrupt:
