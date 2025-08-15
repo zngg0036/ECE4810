@@ -18,9 +18,9 @@ TELEGRAM_CHAT_ID = "1443462038"
 
 TRIGGER_PIN = 7
 ECHO_PIN = 11
-THRESHOLD_DISTANCE = 50  # cm
-READ_INTERVAL = 15  # seconds between ThingSpeak updates
-ALERT_INTERVAL = 30  # seconds before re-sending an alert
+THRESHOLD_DISTANCE = 20  # cm
+READ_INTERVAL = 1  # seconds between ThingSpeak updates
+ALERT_INTERVAL = 10  # seconds before re-sending an alert
 # ----------------------------------------
 
 last_alert_time = 0
