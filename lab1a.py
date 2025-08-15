@@ -74,20 +74,26 @@ try:
 
     while True:
         distance = measure_distance()
-        print(f"[{LOCATION_NAME}] Distance: {distance} cm")
-        send_to_thingspeak(distance)
-        # Send alert if person detected
-        if 0 < distance < THRESHOLD_DISTANCE:
-            now = time.time()
-            if now - last_alert_time > ALERT_INTERVAL:
-                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                message = (f"🚨 Motion Detected!\n"
-                           f"📍 Location: {LOCATION_NAME}\n"
-                           f"📏 Distance: {distance} cm\n"
-                           f"🕒 Time: {timestamp}")
-                send_to_telegram(message)
-                last_alert_time = now
-
+        
+        # Outlier check
+        if distance > 150:
+            print(f"[{LOCATION_NAME}] Outlier detected: {distance} cm")
+        else:
+            print(f"[{LOCATION_NAME}] Distance: {distance} cm")
+            send_to_thingspeak(distance)
+    
+            # Send alert if person detected
+            if 0 < distance < THRESHOLD_DISTANCE:
+                now = time.time()
+                if now - last_alert_time > ALERT_INTERVAL:
+                    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    message = (f"🚨 Motion Detected!\n"
+                               f"📍 Location: {LOCATION_NAME}\n"
+                               f"📏 Distance: {distance} cm\n"
+                               f"🕒 Time: {timestamp}")
+                    send_to_telegram(message)
+                    last_alert_time = now
+    
         time.sleep(READ_INTERVAL)
 
 except KeyboardInterrupt:
